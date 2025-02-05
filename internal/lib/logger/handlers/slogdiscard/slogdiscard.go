@@ -5,6 +5,10 @@ import (
 	"log/slog"
 )
 
+func NewDiscardLogger() *slog.Logger {
+	return slog.New(NewDiscardHandler())
+}
+
 type DiscardHandler struct{}
 
 func NewDiscardHandler() *DiscardHandler {
