@@ -4,8 +4,12 @@ import (
 	"log/slog"
 	"os"
 	"url-shortener/internal/config"
+	mwLogger "url-shortener/internal/http-server/middleware/logger"
 	"url-shortener/internal/lib/logger/sl"
 	"url-shortener/internal/storage/sqlite"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 )
 
 const (
@@ -26,26 +30,15 @@ func main() {
 		log.Error("failed to init storage", sl.Err(err))
 		os.Exit(1)
 	}
+	_ = storage
 
-	// err = storage.SaveURL("https://google.com", "https://local.com")
-	// if err != nil {
-	// 	log.Error("failed to save to storage", sl.Err(err))
-	// 	os.Exit(1)
-	// }
-	// log.Info("POST")
-
-	// res, err := storage.GetURL("https://local.com")
-	// if err != nil {
-	// 	log.Error("failed to get url", sl.Err(err))
-	// 	os.Exit(1)
-	// }
-	// log.Info("GET", slog.String("url", res))
-
-	err = storage.DeleteURL("https://local.com")
-	if err != nil {
-		log.Error("failed to delete url", sl.Err(err))
-	}
-	log.Info("DELETE")
+	router := chi.NewRouter()
+	router.Use(middleware.RequestID)
+	router.Use(middleware.RealIP)
+	router.Use(mwLogger.New(log)) // middleware.Logger отличается от log
+	router.Use(middleware.Recoverer)
+	router.Use(middleware.URLFormat)
+	
 }
 
 func setupLogger(env string) *slog.Logger {
